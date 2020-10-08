@@ -13,7 +13,7 @@ plot( y=d$doy , x=d$year )
 
 ## splines
 d2 <- d[ complete.cases(d$doy) , ] # complete cases on doy
-num_knots <- 15
+num_knots <- 30
 knot_list <- quantile( d2$year , probs=seq( 0 , 1, length.out=num_knots ) )
 
 ## cubic basis functions
@@ -166,3 +166,59 @@ plot.model( m4.3 , "with xbar" )
 plot.model( m4.3.xbarless , "without xbar" )
 
 ## 4M8
+rm(list = ls())
+library(rethinking)
+library(splines)
+
+par(mfrow=c(2,3))
+
+data(cherry_blossoms)
+d <- cherry_blossoms
+## precis(d)
+
+do <- function(num_knots) {
+    ## splines
+    d2 <- d[ complete.cases(d$doy) , ] # complete cases on doy
+    ## num_knots <- 30
+    knot_list <- quantile( d2$year , probs=seq( 0 , 1, length.out=num_knots ) )
+
+    ## cubic basis functions
+    B <- bs(d2$year ,
+            knots=knot_list[ -c( 1 , num_knots ) ] ,
+            degree=3 ,
+            intercept=TRUE
+            )
+
+    ## visualise cubic basis functions
+    plot( NULL , xlim=range(d2$year) , ylim=c(0,1) , xlab="year" , ylab="basis" )
+    for ( i in 1:ncol(B) ) lines( d2$year , B[,i] )
+
+    ## the model
+    m4.7 <- quap(
+        alist(
+            D ~ dnorm( mu , sigma ) ,
+            mu <- a + B %*% w ,
+            a ~ dnorm(100,10) ,
+            w ~ dnorm(0,10),
+            sigma ~ dexp(1)
+        ) ,
+        data=list( D=d2$doy , B=B ) ,
+        start=list( w=rep( 0 , ncol(B) ) )
+    )
+
+    ## plot basis * weight
+    post <- extract.samples( m4.7 )
+    w <- apply( post$w , 2 , mean )
+    plot( NULL , xlim=range(d2$year) , ylim=c(-6,6) ,
+         xlab="year" , ylab="basis * weight" )
+    for ( i in 1:ncol(B) ) lines( d2$year , w[i] * B[,i] )
+
+    ## 97% posterior interval for mu, at each year
+    mu <- link( m4.7 )
+    mu_PI <- apply( mu , 2, PI , 0.97 )
+    plot( d2$year , d2$doy , col=col.alpha(rangi2,0.3) , pch=16 )
+    shade( mu_PI , d2$year , col=col.alpha("black",0.5) )
+}
+
+do(  5  )
+do( 15 )
