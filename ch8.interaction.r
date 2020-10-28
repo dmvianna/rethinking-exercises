@@ -40,3 +40,84 @@ mu <- link( m8.1 , post=prior , data=data.frame(rugged_std=rugged_seq) )
 for ( i in 1:50 ) lines( rugged_seq , mu[i,] , col=col.alpha("black",0.3) )
 
 precis( m8.1 )
+
+## make variable to index Africa (1) or not (2)
+dd$cid <- ifelse( dd$cont_africa==1 , 1 , 2 )
+
+## condition on the intersect
+m8.2 <- quap(
+    alist(
+        log_gdp_std ~ dnorm( mu , sigma ) ,
+        mu <- a[cid] + b*( rugged_std - 0.215 ) ,
+        a[cid] ~ dnorm( 1 , 0.1 ) ,
+        b ~ dnorm( 0 , 0.3 ) ,
+        sigma ~ dexp( 1 )
+    ) , data = dd
+)
+
+compare( m8.1 , m8.2 )
+
+precis( m8.2 , depth=2 )
+
+post <- extract.samples(m8.2)
+diff_a1_a2 <- post$a[,1] - post$a[,2]
+PI( diff_a1_a2 )
+
+## sample from the posterior
+rugged.seq <- seq( from=-0.1 , to=1.1 , length.out=30 )
+## compute mu over samples, fixing cid=2 and then cid=1
+mu.NotAfrica <- link( m8.2 ,
+                     data=data.frame( cid=2 , rugged_std=rugged.seq ) )
+mu.Africa <- link( m8.2 ,
+                  data=data.frame( cid=1 , rugged_std=rugged.seq ) )
+## summarise to means and intervals
+mu.NotAfrica_mu <- apply( mu.NotAfrica , 2 , mean )
+mu.NotAfrica_ci <- apply( mu.NotAfrica , 2 , PI , prob=0.97 )
+mu.Africa_mu <- apply( mu.Africa , 2 , mean )
+mu.Africa_ci <- apply( mu.Africa , 2 , PI , prob=0.97 )
+
+## condition on the slope
+m8.3 <- quap(
+    alist(
+        log_gdp_std ~ dnorm( mu , sigma ) ,
+        mu <- a[cid] + b[cid]*( rugged_std - 0.215 ) ,
+        a[cid] ~ dnorm( 1 , 0.1 ) ,
+        b[cid] ~ dnorm( 0 , 0.3 ) ,
+        sigma ~ dexp( 1 )
+    ) , data=dd
+)
+
+precis( m8.3 , depth=2 )
+
+compare( m8.1 , m8.2 , m8.3 , func=PSIS )
+
+## plot PSIS
+k <- PSIS( m8.3 , pointwise=TRUE )$k
+plot( k )
+identify( x=1:length(k) , y=k , labels=dd$country )
+
+## plot the interaction
+
+## plot Africa - cid=1
+d.A1 <- dd[ dd$cid==1, ]
+plot( d.A1$rugged_std , d.A1$log_gdp_std , pch=16 , col=rangi2 ,
+     xlab="ruggedness (standardised)" , ylab="log GDP (as proportion of mean)" ,
+     xlim=c(0,1) )
+mu <- link( m8.3 , data=data.frame( cid=1 , rugged_std=rugged_seq ) )
+mu_mean <- apply( mu , 2 , mean )
+mu_ci <- apply( mu , 2 , PI , prob=0.97 )
+lines( rugged_seq , mu_mean , lwd=2 )
+shade( mu_ci , rugged_seq , col=col.alpha(rangi2,0.3) )
+mtext("African nations")
+
+## plot non-Africa - cid=2
+d.A0 <- dd[ dd$cid==2 , ]
+plot( d.A0$rugged_std , d.A0$log_gdp_std , pch=1 , col="black" ,
+     xlab="ruggedness (standardised)" , ylab="log GDP (as proportion of mean)" ,
+     xlim=c(0,1) )
+mu <- link( m8.3 , data=data.frame( cid=2 , rugged_std=rugged_seq ) )
+mu_mean <- apply( mu , 2 , mean )
+mu_ci <- apply( mu , 2 , PI , prob=0.97 )
+lines( rugged_seq , mu_mean , lwd=2 )
+shade( mu_ci , rugged_seq )
+mtext("Non-African nations")
