@@ -36,3 +36,10 @@ m9.1 <- ulam(
     ) , data=dat_slim , chains=4 , cores=4
 )
 precis( m9.1 , depth=2 )
+
+pairs( m9.1 )
+
+traceplot( m9.1 )
+
+trankplot( m9.1 )
+
