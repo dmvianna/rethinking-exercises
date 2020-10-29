@@ -40,7 +40,24 @@ for ( model in c(m8.4, m8.5) ) {
         plot( d$water_cent[idx] , d$blooms_std[idx] , xlim=c(-1,1) , ylim=c(0,1) ,
              xlab="water" , ylab="blooms" , pch=16 , col=rangi2 )
         mtext(paste0( "post: shade:" , s))
-        mu <- link( m8.5 , data=data.frame( shade_cent=s , water_cent=-1:1 ) )
+        mu <- link( model , data=data.frame( shade_cent=s , water_cent=-1:1 ) )
         for ( i in 1:20 ) lines( -1:1 , mu[i,] , col=col.alpha("black",0.3) )
+    }
+}
+
+## plot prior predictions
+set.seed(7)
+for ( model in c(m8.4, m8.5) ) {
+    prior <- extract.prior(model)
+    for ( s in -1:1 ) {
+        idx <- which( d$shade_cent==s )
+        plot( NULL , xlim=c(-1.01,1.01) , ylim=c(-0.5,1.5) ,
+             xlab="water" , ylab="blooms" , pch=16 , col=rangi2 )
+        abline( h=1 , lty=2 )
+        abline( h=0 , lty=2 )
+        mtext(paste0( "prior: shade:" , s))
+        mu <- link( model, post=prior , data=data.frame( shade_cent=s , water_cent=-1:1 ) )
+        lines( -1:1 , mu[1, ] , col=col.alpha("black",1) )
+        for ( i in 2:20 ) lines( -1:1 , mu[i,] , col=col.alpha("black",0.3) )
     }
 }
