@@ -61,3 +61,44 @@ for ( model in c(m8.4, m8.5) ) {
         for ( i in 2:20 ) lines( -1:1 , mu[i,] , col=col.alpha("black",0.3) )
     }
 }
+
+## 8E1
+## 1. heat
+## 2. field of expertise
+## 3. Oxygen
+
+## 8E2
+## 1 2 4
+
+## 8E3
+## 1
+## caramel_onions ~ dnorm( mu , sigma )
+## mu <- a + bw*water + bh*heat + bwh*water*heat
+## a ~ dnorm
+## bw ~ dnorm
+## bh ~ dnorm
+## bwh ~ dnorm
+## sigma ~ dexp(1)
+
+## 2
+## speed ~ dnorm( mu , sigma )
+## mu <- a + bc*ncyl + bi*inj + bci*ncyl*inj
+## bc ~ dnorm
+## bi ~ dnorm
+## bci ~ dnorm
+## sigma ~ dexp(1)
+
+## 3
+## pol ~ dnorm( mu , sigma )
+## mu <- a[bid] + b[bid]*belief
+## a[bid] ~ dnorm
+## b[bid] ~ dnorm
+## sigma ~ dexp(1)
+
+## 4
+## intel ~ dnorm( mu , sigma )
+## mu <- a + bs*soc + b[mid]*man + bsm*soc*man
+## bs ~ dnorm
+## b[mid] ~ dnorm
+## bsm ~ dnorm
+## sigma ~ dexp(1)
